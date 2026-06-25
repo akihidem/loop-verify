@@ -1,0 +1,6 @@
+{
+  "name": "parse-port-no-range-check",
+  "has_defect": true,
+  "criteria": "1. parse_port(s) returns an int.\n2. It rejects values outside 1..65535 by raising ValueError.\n3. It rejects non-numeric input by raising ValueError.",
+  "artifact": "def parse_port(s):\n    return int(s)\n"
+}

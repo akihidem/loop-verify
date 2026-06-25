@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+.loop-verify/
+keys.json
+bench-report.json
+*.egg-info/
+.DS_Store

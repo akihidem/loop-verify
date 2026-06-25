@@ -1,0 +1,6 @@
+{
+  "name": "is-even-correct",
+  "has_defect": false,
+  "criteria": "1. is_even(n) returns True iff n is even.\n2. is_even(0) is True.\n3. is_even(-4) is True.\n4. is_even(3) is False.",
+  "artifact": "def is_even(n):\n    return n % 2 == 0\n"
+}
