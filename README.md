@@ -35,17 +35,23 @@ A key buys only the modes it needs (per-mode entitlement + monthly cap).
 v0 builds **A solid**; B/C/D are declared so the suite shape and the entitlement /
 metering plumbing are real and each can be lit up without re-architecting.
 
-## Run (v0 — stdio MCP)
+## Run
 
 ```bash
 python3 -m venv ~/.venvs/loop-verify
 ~/.venvs/loop-verify/bin/pip install -r requirements.txt
+
+# local (stdio), codex backend — the cheap edge-prover:
 LOOP_VERIFY_BACKEND=codex ~/.venvs/loop-verify/bin/python -m loop_verify.server
+
+# remote service (HTTP), prod OpenAI backend (needs OPENAI_API_KEY + `pip install openai`):
+OPENAI_API_KEY=... LOOP_VERIFY_BACKEND=openai \
+  ~/.venvs/loop-verify/bin/python -m loop_verify.server --transport http
 ```
 
-Backend via `LOOP_VERIFY_BACKEND` (default `codex`); key store via `LOOP_VERIFY_STORE`
-(default `~/.loop-verify/keys.json`). Provision a key in the store with its entitled
-modes and monthly cap.
+Backend via `LOOP_VERIFY_BACKEND` (`codex` default | `openai` prod | `gemini` | `mock`);
+key store via `LOOP_VERIFY_STORE` (default `~/.loop-verify/keys.json`). Provision a key
+in the store with its entitled modes and monthly cap.
 
 ## The edge must be proven first
 
@@ -60,8 +66,10 @@ Exit code = the edge verdict, so it can gate CI.
 ## Honest limits
 
 - **COGS / scale**: the codex backend runs on the operator's personal ChatGPT Plus
-  quota — **not scalable to paying customers**. Production requires an API provider
-  with server-side keys (the `openai` / `gemini` seams).
+  quota — **not scalable to paying customers**, so codex stays the cheap *edge-prover*.
+  The **OpenAI prod backend is now wired** (`LOOP_VERIFY_BACKEND=openai`, server-side
+  key) and removes that blocker — it is unit-tested with an injected client and awaits a
+  live key. An HTTP transport (`--transport http`) makes it a remotely-reachable service.
 - **DIY threat**: a customer can run codex themselves. The moat is aggregation,
   metering, zero-setup, the *proven* edge, and curation — not secrecy.
 - **Independent ≠ ground truth**: a different lineage reduces shared blind spots; it

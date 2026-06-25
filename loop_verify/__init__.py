@@ -6,4 +6,4 @@ from a DIFFERENT model lineage. Exposed as a selectable MCP suite (mode A active
 B/C/D declared), gated by per-mode entitlement + metering.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

@@ -60,7 +60,16 @@ def run_loop(api_key: str = "") -> dict:
 
 
 def main() -> None:
-    mcp.run()
+    import argparse
+
+    ap = argparse.ArgumentParser(description="loop-verify MCP server")
+    ap.add_argument(
+        "--transport", default="stdio", choices=["stdio", "http", "sse"],
+        help="stdio (default, local) | http (streamable-http, for remote customers) | sse",
+    )
+    args = ap.parse_args()
+    transport = {"stdio": "stdio", "http": "streamable-http", "sse": "sse"}[args.transport]
+    mcp.run(transport=transport)
 
 
 if __name__ == "__main__":
