@@ -41,7 +41,12 @@ Real edge = `bench/edge_bench.py --backend codex` (costs codex quota).
   Remote exposure: LOOP_VERIFY_ALLOWED_HOSTS allowlist (0.0.0.0 alone disables the Host check).
 - Dockerfile (host 0.0.0.0, backend=openai since codex CLI isn't in the image).
 - `demo/http_smoke.py` = real MCP client round-trip over http (mock backend, no key). Verified live.
+- DECISION 2026-06-25 (mkg): ship the Dockerfile only, do NOT run a hosted instance.
+  Users self-host with their own key. Aligns with no-money "just a tool" (no API cost,
+  no key to drain, no auth layer to operate). Cloud Run was an option (gcloud authed) but
+  declined deliberately.
 
 ## Out of scope / future
-- A larger marker-free, lineage-controlled bench; auth on the http endpoint; a hosted instance.
+- A larger marker-free, lineage-controlled bench; auth on the http endpoint (only needed
+  if a hosted instance is ever run — currently NOT planned, see Deploy decision above).
   (Gemini backend wired 2026-06-25, mirrors openai — injectable client, unit-tested, awaits live key.)
