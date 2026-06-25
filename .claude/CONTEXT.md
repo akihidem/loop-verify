@@ -9,8 +9,8 @@ no metering, no billing.** (Pivoted away from the paid-product framing 2026-06-2
 
 ## Architecture
 - `loop_verify/checker/` — Checker protocol + Verdict (identical contract to loop-kit's
-  validator). Backends: CodexChecker (default), OpenAI (own-key path), Gemini (stub),
-  MockChecker (deterministic tests). Selected by LOOP_VERIFY_BACKEND.
+  validator). Backends: CodexChecker (default), OpenAI + Gemini (own-key paths, injectable
+  client, unit-tested w/o live key), MockChecker (deterministic tests). Sel by LOOP_VERIFY_BACKEND.
 - `loop_verify/service.py` — pure logic: run_independent_verify(criteria, artifact,
   checker=|backend=). Never raises (bad backend / crashing checker -> FAIL verdict).
 - `loop_verify/server.py` — thin FastMCP wrapper. Tools: independent_verify, info.
@@ -36,4 +36,5 @@ Real edge = `bench/edge_bench.py --backend codex` (costs codex quota).
   LICENSE -> MIT. Repo made public.
 
 ## Out of scope / future
-- Gemini backend impl; HTTP hosted deploy; a larger marker-free, lineage-controlled bench.
+- HTTP hosted deploy; a larger marker-free, lineage-controlled bench. (Gemini backend
+  wired 2026-06-25, mirrors openai — injectable client, unit-tested, awaits a live key.)

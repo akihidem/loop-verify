@@ -40,6 +40,10 @@ LOOP_VERIFY_BACKEND=codex ~/.venvs/loop-verify/bin/python -m loop_verify.server 
 # OpenAI backend (needs OPENAI_API_KEY + `pip install openai`):
 OPENAI_API_KEY=... LOOP_VERIFY_BACKEND=openai \
   ~/.venvs/loop-verify/bin/python -m loop_verify.server
+
+# Gemini backend (needs GEMINI_API_KEY + `pip install google-genai`):
+GEMINI_API_KEY=... LOOP_VERIFY_BACKEND=gemini \
+  ~/.venvs/loop-verify/bin/python -m loop_verify.server
 ```
 
 Tools: `independent_verify(criteria, artifact)` and `info()`. Backend selected by
