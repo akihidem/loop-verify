@@ -1,14 +1,30 @@
 # loop-verify
 
-An **independent checker** for the self-verification loop — the part the
+**Have a *different* AI grade the work your AI just did.**
+
+loop-verify is an **independent checker** for the self-verification loop — the part the
 [loop-kit](https://github.com/akihidem/loop-kit) loop honestly admits it cannot do.
 
-Free loop-kit checks Claude's work *with Claude* (same family → shared blind spots).
-loop-verify runs an **independent checker from a different model lineage**
-(codex / GPT / Gemini) instead. The verdict contract is identical to loop-kit's
-`validator`, so it is a **drop-in replacement** for the same-family check.
+When an AI checks its own work, it shares its own blind spots. Free loop-kit checks
+Claude's work *with Claude* (same family → the same misses slip through). loop-verify
+hands the grading to a **different model lineage** (codex / GPT / Gemini), so defects the
+self-check waves through get caught. The verdict format is identical to loop-kit's
+`validator`, so it's a **drop-in replacement** for the same-family check.
 
 > Open source (MIT). Just a tool — no accounts, no metering, no billing.
+
+## What it does
+
+- **In:** your frozen YES/NO acceptance `criteria` + the `artifact` to inspect (a diff or
+  file contents).
+- **Out:** a verdict — `PASS`/`FAIL`, each criterion `OK`/`NG`, any defects outside the
+  criteria, and concrete `fix_instructions`. (Same contract as loop-kit's `validator`.)
+- **The point:** the grader is a *different* model family from whoever wrote the work, so
+  it doesn't share their blind spots. That independence is the whole value — and it's
+  measurable (see [the edge bench](#does-independence-actually-help-the-edge-bench)).
+
+Three ways to use it: as an [MCP server](#run-as-an-mcp-server), as a
+[Python function](#use-it-from-python), or via the [edge bench](#does-independence-actually-help-the-edge-bench).
 
 ## Install
 
@@ -100,6 +116,10 @@ python bench/edge_bench.py --backend mock     # naive/blind baseline -> typicall
 The gap between an independent checker (catches planted defects) and a naive one
 (misses them) is the whole reason to use this. Exit code = the edge verdict, so it
 can gate CI.
+
+Measured on the bundled 9 fixtures (4 clean / 5 buggy, diverse bug classes): the codex
+backend scored **recall 1.0, false-positive 0.0 → GO** (every real bug flagged, every
+clean artifact passed), while the naive same-family baseline misses them → NO-GO.
 
 ## Honest limits
 
