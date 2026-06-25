@@ -1,0 +1,6 @@
+{
+  "name": "mutable-default-arg",
+  "has_defect": true,
+  "criteria": "1. append_item(item, bucket=None) returns a list containing item.\n2. Calling it repeatedly without a bucket returns a list with ONLY that call's item (calls do not accumulate into a shared list).",
+  "artifact": "def append_item(item, bucket=[]):\n    bucket.append(item)\n    return bucket\n"
+}

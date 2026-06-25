@@ -1,0 +1,6 @@
+{
+  "name": "clamp-correct",
+  "has_defect": false,
+  "criteria": "1. clamp(x, lo, hi) returns x constrained to [lo, hi].\n2. clamp(5, 0, 10) == 5.\n3. clamp(-3, 0, 10) == 0.\n4. clamp(99, 0, 10) == 10.",
+  "artifact": "def clamp(x, lo, hi):\n    if x < lo:\n        return lo\n    if x > hi:\n        return hi\n    return x\n"
+}
