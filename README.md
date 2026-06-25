@@ -1,104 +1,77 @@
-# loop-verify (paid)
+# loop-verify
 
-Independent verification for the self-verification loop — the part the free
-**loop-kit** loop honestly admits it cannot do.
+An **independent checker** for the self-verification loop — the part the
+[loop-kit](https://github.com/akihidem/loop-kit) loop honestly admits it cannot do.
 
 Free loop-kit checks Claude's work *with Claude* (same family → shared blind spots).
-loop-verify supplies an **independent checker from a different model lineage**
-(codex / GPT / Gemini), delivered as a metered MCP suite.
+loop-verify runs an **independent checker from a different model lineage**
+(codex / GPT / Gemini) instead. The verdict contract is identical to loop-kit's
+`validator`, so it is a **drop-in replacement** for the same-family check.
 
-> Proprietary. Not open source. See `LICENSE`.
+> Open source (MIT). Just a tool — no accounts, no metering, no billing.
 
-## Free vs Pro
+## Install
 
-| | Free (loop-kit) | Pro (loop-verify) |
-|---|---|---|
-| Checker | Claude validates Claude | a **different lineage** (codex / GPT / Gemini) |
-| Blind spots | shared (same family) | broken by independence |
-| L0 deterministic gate | yes (yours) | yes (yours) |
-| Delivery | local agent | metered MCP suite, per-mode entitlement |
-
-The verdict contract is identical to loop-kit's `validator`, so `independent_verify`
-is a drop-in replacement for the free same-family check.
-
-## Selectable suite (à la carte)
-
-A key buys only the modes it needs (per-mode entitlement + monthly cap).
-
-| Mode | MCP tool | v0.1.0 |
-|---|---|---|
-| **A** independent-verify | `independent_verify` | **active** |
-| B governance (criteria registry / audit) | `verification_registry` | declared |
-| C analytics (Goodhart-risk) | `verification_analytics` | declared |
-| D loop-as-a-service | `run_loop` | declared |
-
-v0 builds **A solid**; B/C/D are declared so the suite shape and the entitlement /
-metering plumbing are real and each can be lit up without re-architecting.
+```bash
+python3 -m venv ~/.venvs/loop-verify
+~/.venvs/loop-verify/bin/pip install -r requirements.txt
+```
 
 ## Demo (one command, runs anywhere)
-
-See the whole stack work — provision → verify → metered cap → the edge → the suite —
-against a throwaway store (never touches your real keys):
 
 ```bash
 python demo/run_demo.py                  # deterministic, offline (mock backend)
 python demo/run_demo.py --backend codex  # the REAL edge (costs codex quota)
 ```
 
-Exit code 0 iff every mechanism invariant held, so the demo doubles as a smoke test.
-With `--backend codex` it shows the independent checker catching planted defects a
-naive same-family check misses.
+Exit code 0 iff the demo's invariants held, so it doubles as a smoke test. With
+`--backend codex` it shows the independent checker catching planted defects a naive
+same-family check misses.
 
-## Provision a key (the paywall mechanism)
-
-The server denies every call until a key exists with the right entitlements:
+## Run as an MCP server
 
 ```bash
-python -m loop_verify.admin add-key CUSTOMER_KEY --modes A --cap 300
-python -m loop_verify.admin list
-python -m loop_verify.admin show CUSTOMER_KEY
-```
-
-## Run
-
-```bash
-python3 -m venv ~/.venvs/loop-verify
-~/.venvs/loop-verify/bin/pip install -r requirements.txt
-
-# local (stdio), codex backend — the cheap edge-prover:
+# local (stdio), codex backend:
 LOOP_VERIFY_BACKEND=codex ~/.venvs/loop-verify/bin/python -m loop_verify.server
 
-# remote service (HTTP), prod OpenAI backend (needs OPENAI_API_KEY + `pip install openai`):
+# HTTP transport (for a remotely-reachable tool):
+LOOP_VERIFY_BACKEND=codex ~/.venvs/loop-verify/bin/python -m loop_verify.server --transport http
+
+# OpenAI backend (needs OPENAI_API_KEY + `pip install openai`):
 OPENAI_API_KEY=... LOOP_VERIFY_BACKEND=openai \
-  ~/.venvs/loop-verify/bin/python -m loop_verify.server --transport http
+  ~/.venvs/loop-verify/bin/python -m loop_verify.server
 ```
 
-Backend via `LOOP_VERIFY_BACKEND` (`codex` default | `openai` prod | `gemini` | `mock`);
-key store via `LOOP_VERIFY_STORE` (default `~/.loop-verify/keys.json`). Provision a key
-in the store with its entitled modes and monthly cap.
+Tools: `independent_verify(criteria, artifact)` and `info()`. Backend selected by
+`LOOP_VERIFY_BACKEND` (`codex` default | `openai` | `gemini` | `mock`).
 
-## The edge must be proven first
+## Use it from Python
+
+```python
+from loop_verify.service import run_independent_verify
+
+result = run_independent_verify(criteria, artifact, backend="codex")
+# -> {"verdict": "PASS"|"FAIL", "passed": bool, "criteria": [...],
+#     "defects_outside": [...], "fix_instructions": str, "checker": ..., "lineage": ...}
+```
+
+## Does independence actually help? (the edge bench)
 
 ```bash
-python bench/edge_bench.py --backend codex   # real independent checker -> GO/NO-GO
+python bench/edge_bench.py --backend codex   # independent checker -> GO/NO-GO
 python bench/edge_bench.py --backend mock     # naive/blind baseline -> typically NO-GO
 ```
 
-The gap between an independent checker (GO) and a naive one (NO-GO) **is** the product.
-Exit code = the edge verdict, so it can gate CI.
+The gap between an independent checker (catches planted defects) and a naive one
+(misses them) is the whole reason to use this. Exit code = the edge verdict, so it
+can gate CI.
 
 ## Honest limits
 
-- **COGS / scale**: the codex backend runs on the operator's personal ChatGPT Plus
-  quota — **not scalable to paying customers**, so codex stays the cheap *edge-prover*.
-  The **OpenAI prod backend is now wired** (`LOOP_VERIFY_BACKEND=openai`, server-side
-  key) and removes that blocker — it is unit-tested with an injected client and awaits a
-  live key. An HTTP transport (`--transport http`) makes it a remotely-reachable service.
-- **DIY threat**: a customer can run codex themselves. The moat is aggregation,
-  metering, zero-setup, the *proven* edge, and curation — not secrecy.
+- **codex backend cost**: the codex backend runs on the operator's personal ChatGPT
+  Plus quota — fine for personal/local use, not for serving many users. Use the OpenAI
+  backend with your own key for that.
 - **Independent ≠ ground truth**: a different lineage reduces shared blind spots; it
-  does not eliminate error. Consistent with loop-kit's own honesty.
-- **The edge is the heart**: if the bench ever shows the independent checker ≈ a naive
-  one, the value collapses — that is a NO-GO, reported honestly, not buried.
-- **"Paid" in v0 is the paywall mechanism** (api-key + monthly cap + per-mode
-  entitlement). Real billing (Stripe etc.) is a later seam, not wired here.
+  does not eliminate error.
+- **The edge is the point**: if the bench ever shows the independent checker ≈ a naive
+  one, there is no reason to use it — that is a NO-GO, reported honestly, not buried.

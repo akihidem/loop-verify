@@ -1,18 +1,17 @@
-"""Edge bench — the heart of the value proposition.
+"""Edge bench — does independence actually help?
 
-Claim to prove: an INDEPENDENT checker (different model lineage) catches defects a
+Claim to check: an INDEPENDENT checker (different model lineage) catches defects a
 lenient/same-family check misses. Fixtures carry ground truth (`has_defect`); a
 checker "catches" a defective fixture by returning FAIL.
 
 Run for real:   python bench/edge_bench.py --backend codex
 Contrast:       python bench/edge_bench.py --backend mock   (marker-blind -> misses real bugs -> NO-GO)
 
-The gap between codex (GO) and a naive check (NO-GO) IS the edge. Exit code = the
-edge verdict (GO -> 0, NO-GO -> 1) so it can act as a CI gate.
+The gap between codex (GO) and a naive check (NO-GO) is the reason to use the tool.
+Exit code = the edge verdict (GO -> 0, NO-GO -> 1) so it can act as a CI gate.
 
-Honest limit: fixtures are few and the codex run still costs the operator's personal
-quota (not scalable to customers — prod must use an API provider). A larger,
-marker-free, lineage-controlled benchmark is future work.
+Honest limit: fixtures are few. A larger, marker-free, lineage-controlled benchmark
+is future work.
 """
 from __future__ import annotations
 

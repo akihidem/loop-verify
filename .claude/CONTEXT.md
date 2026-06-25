@@ -1,39 +1,39 @@
 # loop-verify — CONTEXT
 
 ## North star
-The paid backend for the self-verification loop. Free loop-kit = Claude checks Claude
-(shared blind spots, admitted in its README). loop-verify sells the missing piece:
-an INDEPENDENT checker from a different model lineage, as a selectable metered MCP suite.
-loop-kit (public, free) stays the funnel; this repo is the product (private, proprietary).
+An open-source (MIT) **independent checker** for the self-verification loop. Free
+loop-kit = Claude checks Claude (shared blind spots, admitted in its README).
+loop-verify supplies the missing piece: an INDEPENDENT checker from a different model
+lineage (codex / GPT / Gemini), as a drop-in MCP tool. **Just a tool — no accounts,
+no metering, no billing.** (Pivoted away from the paid-product framing 2026-06-25.)
 
 ## Architecture
 - `loop_verify/checker/` — Checker protocol + Verdict (identical contract to loop-kit's
-  validator). Backends: CodexChecker (v0), OpenAI/Gemini (prod seams, NotImplementedError),
+  validator). Backends: CodexChecker (default), OpenAI (own-key path), Gemini (stub),
   MockChecker (deterministic tests). Selected by LOOP_VERIFY_BACKEND.
-- `loop_verify/modes/registry.py` — the suite: A active, B/C/D declared. Per-mode entitlement.
-- `loop_verify/metering/` — api-key store (stdlib JSON) + entitlement/monthly-cap gate.
-  Paywall MECHANISM only; billing (Stripe) deferred.
-- `loop_verify/service.py` — pure logic (no mcp dep, fully unit-testable).
-- `loop_verify/server.py` — thin FastMCP stdio wrapper.
-- `bench/edge_bench.py` — proves the edge: independent (codex) GO vs naive (mock) NO-GO.
+- `loop_verify/service.py` — pure logic: run_independent_verify(criteria, artifact,
+  checker=|backend=). Never raises (bad backend / crashing checker -> FAIL verdict).
+- `loop_verify/server.py` — thin FastMCP wrapper. Tools: independent_verify, info.
+- `bench/edge_bench.py` — does independence help? independent (codex) GO vs naive (mock)
+  NO-GO. Exit code = verdict.
+- `demo/run_demo.py` — one-command demo: contract + the edge. mock default / --backend codex.
 
-## Frozen acceptance criteria (v0.1.0)
-1. independent_verify (mode A) runs end-to-end (service layer) returning the validator
-   contract; codex behind the Checker seam, tests use MockChecker (deterministic).
-2. Backend seam: CodexChecker works + OpenAI/Gemini stubs; selectable by env.
-3. Metering: per-mode entitlement + monthly cap; over-cap denied, counter increments.
-4. Edge bench: codex vs naive on fixtures -> GO/NO-GO; exit code = verdict.
-5. README: Free vs Pro + honest limits (codex non-scalable / DIY / edge-must-be-proven);
-   private repo; proprietary LICENSE.
-
-L0 = pytest (criteria 1-3 deterministic via mock) + bench machinery test.
+## L0
+`~/.venvs/loop-verify/bin/python -m pytest tests -q`. Deterministic via MockChecker.
 Real edge = `bench/edge_bench.py --backend codex` (costs codex quota).
 
 ## Decisions / honesty
-- v0 backend = codex to PROVE the edge cheaply; it does NOT scale to customers.
-- "Paid" = api-key + cap + entitlement; no real billing yet.
-- Build local only; GitHub (private) push is a later y/n.
+- Default backend = codex (operator ChatGPT Plus quota): fine personal/local; use the
+  OpenAI backend with your own key to serve many users.
+- Independent ≠ ground truth. If the bench ever shows independent ≈ naive, there's no
+  reason to use it — report NO-GO honestly.
+- The checker prompt must NOT force false positives (old Rule 4 did; fixed — a checker
+  that can never PASS has no precision).
 
-## Out of scope (v0.2+)
-- HTTP transport + hosted deploy; prod OpenAI/Gemini impls + key mgmt; real billing;
-  B/C/D mode implementations; a larger marker-free, lineage-controlled benchmark.
+## Removed (was the paid-product machinery)
+- `loop_verify/metering/` (api-key store + entitlement/cap gate), `loop_verify/admin.py`
+  (key CLI), `loop_verify/modes/` (A/B/C/D à-la-carte suite), `docs/GTM.md`, proprietary
+  LICENSE -> MIT. Repo made public.
+
+## Out of scope / future
+- Gemini backend impl; HTTP hosted deploy; a larger marker-free, lineage-controlled bench.

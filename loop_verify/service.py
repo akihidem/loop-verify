@@ -1,51 +1,31 @@
 """Pure service logic — no MCP dependency, so it is fully unit-testable.
 
-server.py is a thin FastMCP wrapper over these functions.
+server.py is a thin FastMCP wrapper over this function.
 """
 from __future__ import annotations
 
-import datetime
-
 from .checker import get_checker
 from .checker.base import Verdict
-from .metering.gate import check_access
-from .modes.registry import MODES
 
 
-def current_month() -> str:
-    return datetime.date.today().strftime("%Y-%m")
-
-
-def run_independent_verify(criteria, artifact, api_key, *, store, checker=None, backend=None, month=None) -> dict:
-    """Mode A. Gate by entitlement+cap, run an independent checker, meter the call.
+def run_independent_verify(criteria, artifact, *, checker=None, backend=None) -> dict:
+    """Run an independent adversarial checker over a deliverable and return the verdict.
 
     Pass an explicit `checker` (tests inject MockChecker) or a `backend` name to select
-    one by env-style key (codex/openai/gemini/mock); if neither, the default backend.
+    one (codex/openai/gemini/mock); if neither, the default backend (LOOP_VERIFY_BACKEND).
+    The independence — a different model lineage from whoever produced the work — is the
+    whole point. Returns the validator contract: verdict/passed, per-criterion, defects,
+    fix_instructions. Never raises: a misconfigured backend or a crashing checker becomes
+    a FAIL verdict, so a server wrapper never goes down.
     """
-    month = month or current_month()
-    gate = check_access(store, api_key, "A", month)
-    if not gate.allowed:
-        return {"allowed": False, "mode": "A", "reason": gate.reason}
-    # Build the checker BEFORE metering — constructing it is cheap (no model call), so a
-    # misconfigured backend fails closed with NO quota burned.
     if checker is None:
         try:
             checker = get_checker(backend)
         except ValueError as e:
-            return {"allowed": False, "mode": "A", "reason": str(e)}
-    # Atomic reserve BEFORE the call — closes the check-then-increment cap race.
-    # try_consume reads the cap under its own lock, so the decision is race-free.
-    ok, used = store.try_consume(api_key, month)
-    if not ok:
-        rec = store.get_key(api_key)
-        cap = rec.get("monthly_cap") if rec else None
-        return {"allowed": False, "mode": "A", "reason": f"monthly cap reached ({used}/{cap})"}
+            return Verdict(verdict="FAIL", fix_instructions=str(e)).to_dict()
     try:
         verdict = checker.verify(criteria, artifact)
-    except Exception as e:  # noqa: BLE001 — a custom checker may raise; never crash the
-        # server. Mirror the backends (which catch their own errors): a failed attempt
-        # becomes a FAIL verdict. Consume stays uniform — every attempt that reaches the
-        # checker is metered, whether it returns FAIL or raises.
+    except Exception as e:  # noqa: BLE001 — a custom checker may raise; never crash.
         verdict = Verdict(
             verdict="FAIL",
             fix_instructions=f"checker raised: {e}",
@@ -53,28 +33,6 @@ def run_independent_verify(criteria, artifact, api_key, *, store, checker=None, 
             lineage=getattr(checker, "lineage", ""),
         )
     out = verdict.to_dict()
-    out.update({
-        "allowed": True,
-        "mode": "A",
-        "checker": verdict.checker or getattr(checker, "name", ""),
-        "lineage": verdict.lineage or getattr(checker, "lineage", ""),
-        "usage_this_month": used,
-    })
+    out["checker"] = verdict.checker or getattr(checker, "name", "")
+    out["lineage"] = verdict.lineage or getattr(checker, "lineage", "")
     return out
-
-
-def run_stub_mode(mode_key, api_key, *, store, month=None) -> dict:
-    """B/C/D: gate identically, but report that the mode is declared, not built."""
-    month = month or current_month()
-    mode = MODES.get(mode_key)
-    if mode is None:
-        return {"allowed": False, "reason": f"unknown mode {mode_key}"}
-    gate = check_access(store, api_key, mode_key, month)
-    if not gate.allowed:
-        return {"allowed": False, "mode": mode_key, "reason": gate.reason}
-    return {
-        "allowed": True,
-        "mode": mode_key,
-        "status": "not_yet_available",
-        "message": f"mode {mode_key} ({mode.name}) is declared but not built in v0.1.0",
-    }

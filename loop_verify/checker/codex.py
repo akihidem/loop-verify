@@ -1,9 +1,8 @@
-"""CodexChecker — the v0 independent backend.
+"""CodexChecker — the default independent backend.
 
 codex runs on the operator's ChatGPT Plus quota, a DIFFERENT model lineage from
-Claude. That makes it a cheap way to PROVE the edge (does an independent checker
-catch what a same-family one misses?). It is NOT scalable to paying customers —
-prod must use an API provider with server-side keys (see openai.py / gemini.py).
+Claude — so it catches what a same-family check misses. Great for personal/local
+use; to serve many users, use the OpenAI backend with your own API key (openai.py).
 
 Trap (from prior runs): codex hangs forever if stdin is left open. We always pass
 stdin=DEVNULL and `exec --skip-git-repo-check`, and run in a temp cwd so codex has

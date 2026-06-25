@@ -1,5 +1,5 @@
 """The verdict contract — deliberately identical in shape to loop-kit's `validator`
-agent output, so an independent checker is a drop-in replacement for the free
+agent output, so an independent checker is a drop-in replacement for the
 same-family one.
 """
 from __future__ import annotations
@@ -23,7 +23,7 @@ class Verdict:
     fix_instructions: str = ""
     checker: str = ""                  # which checker/model produced this verdict
     lineage: str = ""                  # model lineage, e.g. "codex/gpt" — the independence claim
-    raw: str = ""                      # raw checker text (for audit / metering receipts)
+    raw: str = ""                      # raw checker text (for audit)
 
     @property
     def passed(self) -> bool:
@@ -41,7 +41,7 @@ class Checker(Protocol):
 
     Implementations MUST NOT mutate the deliverable. The whole point of this
     package is that `name`/`lineage` is different from the caller (which is
-    Claude inside loop-kit) — that independence is the product.
+    Claude inside loop-kit) — that independence is the value.
     """
 
     name: str

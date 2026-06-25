@@ -1,7 +1,7 @@
-"""OpenAIChecker — prod backend (now wired).
+"""OpenAIChecker — backend for running on your own API key.
 
-The scalability fix: a server-side OpenAI key means paying customers get an
-independent checker WITHOUT the operator's personal codex quota. The client is
+Use this instead of codex when you want an independent checker without the
+operator's personal codex quota (e.g. serving more than one user). The client is
 injectable so the implementation is unit-tested deterministically (no live key,
 no network); the live path lazily constructs `openai.OpenAI`.
 """

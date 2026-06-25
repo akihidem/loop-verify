@@ -1,7 +1,7 @@
 """MockChecker — deterministic backend for tests and offline demos.
 
 It does NOT call any model. It applies a tiny set of rules so the contract,
-parser, server wiring and metering can be tested without burning codex/API quota
+parser and server wiring can be tested without burning codex/API quota
 (L0 must be deterministic — see loop-protocol).
 """
 from __future__ import annotations
