@@ -54,6 +54,14 @@ def parse_verdict(text: str) -> Verdict:
     if fm:
         fix = fm.group(1).strip()
 
+    # Fail closed on self-contradiction: a PASS headline with any NG criterion is not a
+    # pass. (defects_outside are informational — outside the frozen criteria — so they do
+    # NOT block PASS; the criteria are the contract.)
+    if verdict == "PASS" and any(not c.ok for c in criteria):
+        verdict = "FAIL"
+        if not fix:
+            fix = "checker output was self-contradictory (PASS headline with NG criteria)"
+
     return Verdict(
         verdict=verdict,
         criteria=criteria,

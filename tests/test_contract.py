@@ -40,6 +40,34 @@ def test_parse_garbage_fails_closed():
     assert v.verdict == "FAIL" and not v.passed
 
 
+def test_parse_pass_headline_with_ng_fails_closed():
+    # Self-contradiction: PASS headline but a criterion is NG. The criteria are the
+    # contract, so this must NOT pass (fail closed) and must explain itself.
+    v = parse_verdict(
+        "Verdict: PASS\nPer criterion:\n- [1] OK\n- [2] NG — off by one\nFix instructions:\n"
+    )
+    assert v.verdict == "FAIL" and not v.passed
+    assert "contradict" in v.fix_instructions.lower()
+
+
+def test_parse_pass_with_ng_keeps_checker_supplied_fix():
+    # If the checker already supplied a fix, we keep it rather than overwriting.
+    v = parse_verdict(
+        "Verdict: PASS\nPer criterion:\n- [1] NG — wrong\nFix instructions: do the thing\n"
+    )
+    assert v.verdict == "FAIL" and v.fix_instructions == "do the thing"
+
+
+def test_parse_pass_with_defects_only_still_passes():
+    # defects_outside are informational (outside the frozen criteria) — they do NOT
+    # block PASS when every criterion is OK.
+    v = parse_verdict(
+        "Verdict: PASS\nPer criterion:\n- [1] OK\n"
+        "Defects outside the criteria:\n- minor style nit\nFix instructions:\n"
+    )
+    assert v.verdict == "PASS" and v.passed and v.defects_outside
+
+
 def test_parse_takes_last_verdict():
     v = parse_verdict("Verdict: PASS\nblah\nVerdict: FAIL\nPer criterion:\n- [1] NG — x\n")
     assert v.verdict == "FAIL"

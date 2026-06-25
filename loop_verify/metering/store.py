@@ -56,3 +56,25 @@ class Store:
             usage[month] = int(usage.get(month, 0)) + n
             self._save()
             return usage[month]
+
+    def try_consume(self, api_key: str, month: str) -> tuple[bool, int]:
+        """Atomically reserve one unit against the key's own monthly cap, under the lock.
+
+        Reading the cap and incrementing the counter happen under a single lock, so
+        this is the sole source of truth for the cap decision — no check-then-increment
+        race, and no cap read outside the lock (TOCTOU). Returns (ok, used_after).
+        ok=False with NO increment (and NO record creation) if the key is unknown or
+        its cap is already reached — fail closed.
+        """
+        with self._lock:
+            rec = self._data.get(api_key)
+            if rec is None:
+                return (False, 0)
+            cap = rec.get("monthly_cap")
+            usage = rec.setdefault("usage", {})
+            used = int(usage.get(month, 0))
+            if cap is not None and used >= cap:
+                return (False, used)
+            usage[month] = used + 1
+            self._save()
+            return (True, usage[month])

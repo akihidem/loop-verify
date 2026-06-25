@@ -38,6 +38,24 @@ def test_verify_fail_passthrough(tmp_path):
     assert out["allowed"] and out["passed"] is False and out["defects_outside"]
 
 
+class _RaisingChecker:
+    name = "boom"
+    lineage = "test/raises"
+
+    def verify(self, criteria, artifact):
+        raise RuntimeError("kaboom")
+
+
+def test_verify_checker_raise_becomes_fail_verdict(tmp_path):
+    # A custom checker that raises must not crash the server: it becomes a FAIL
+    # verdict (mirroring the backends), and the attempt is still metered uniformly.
+    s = _store(tmp_path, k1=(["A"], 5))
+    out = run_independent_verify("c", "code", "k1", store=s, checker=_RaisingChecker(), month=M)
+    assert out["allowed"] and out["passed"] is False
+    assert "kaboom" in out["fix_instructions"]
+    assert out["usage_this_month"] == 1                       # attempt consumed, uniform
+
+
 def test_stub_mode_entitlement(tmp_path):
     s = _store(tmp_path, k1=(["B"], None))
     out = run_stub_mode("B", "k1", store=s, month=M)

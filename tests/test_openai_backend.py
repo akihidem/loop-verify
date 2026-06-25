@@ -3,9 +3,14 @@ import types
 from loop_verify.checker.openai import OpenAIChecker
 
 
-def _fake_client(text: str):
-    """A stand-in shaped like openai.OpenAI for deterministic tests (no key, no network)."""
+def _fake_client(text: str, *, captured: dict | None = None):
+    """A stand-in shaped like openai.OpenAI for deterministic tests (no key, no network).
+
+    If `captured` is given, the kwargs of the create() call are recorded into it.
+    """
     def create(**kwargs):
+        if captured is not None:
+            captured.update(kwargs)
         msg = types.SimpleNamespace(content=text)
         return types.SimpleNamespace(choices=[types.SimpleNamespace(message=msg)])
 
@@ -27,6 +32,19 @@ def test_openai_parses_fail():
 def test_openai_parses_pass():
     c = OpenAIChecker(client=_fake_client("Verdict: PASS\nPer criterion:\n- [1] OK\n"))
     assert c.verify("criteria", "code").passed
+
+
+def test_openai_passes_timeout_to_create():
+    # The per-request timeout must reach the API call, else a hung backend blocks
+    # the server indefinitely instead of failing closed.
+    captured = {}
+    c = OpenAIChecker(
+        client=_fake_client("Verdict: PASS\nPer criterion:\n- [1] OK\n", captured=captured),
+        timeout=7,
+    )
+    c.verify("criteria", "code")
+    assert captured["timeout"] == 7
+    assert captured["temperature"] == 0
 
 
 def test_openai_no_key_is_graceful(monkeypatch):

@@ -47,6 +47,7 @@ class OpenAIChecker:
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0,
+                timeout=self.timeout,
             )
             text = resp.choices[0].message.content or ""
         except Exception as e:  # noqa: BLE001 — any backend failure becomes a FAIL verdict, never crash the server

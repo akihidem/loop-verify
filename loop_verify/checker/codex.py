@@ -46,14 +46,15 @@ class CodexChecker:
             cmd += ["-m", self.model]
         cmd.append(prompt)
         try:
-            proc = subprocess.run(
-                cmd,
-                stdin=subprocess.DEVNULL,            # never leave stdin open -> codex hangs
-                capture_output=True,
-                text=True,
-                timeout=self.timeout,
-                cwd=tempfile.gettempdir(),           # nothing here for the agent to mutate
-            )
+            with tempfile.TemporaryDirectory(prefix="loop-verify-codex-") as workdir:
+                proc = subprocess.run(
+                    cmd,
+                    stdin=subprocess.DEVNULL,        # never leave stdin open -> codex hangs
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout,
+                    cwd=workdir,                     # isolated throwaway dir (codex exec defaults to a read-only sandbox)
+                )
         except subprocess.TimeoutExpired:
             return Verdict(
                 verdict="FAIL",
