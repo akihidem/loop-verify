@@ -35,6 +35,30 @@ A key buys only the modes it needs (per-mode entitlement + monthly cap).
 v0 builds **A solid**; B/C/D are declared so the suite shape and the entitlement /
 metering plumbing are real and each can be lit up without re-architecting.
 
+## Demo (one command, runs anywhere)
+
+See the whole stack work — provision → verify → metered cap → the edge → the suite —
+against a throwaway store (never touches your real keys):
+
+```bash
+python demo/run_demo.py                  # deterministic, offline (mock backend)
+python demo/run_demo.py --backend codex  # the REAL edge (costs codex quota)
+```
+
+Exit code 0 iff every mechanism invariant held, so the demo doubles as a smoke test.
+With `--backend codex` it shows the independent checker catching planted defects a
+naive same-family check misses.
+
+## Provision a key (the paywall mechanism)
+
+The server denies every call until a key exists with the right entitlements:
+
+```bash
+python -m loop_verify.admin add-key CUSTOMER_KEY --modes A --cap 300
+python -m loop_verify.admin list
+python -m loop_verify.admin show CUSTOMER_KEY
+```
+
 ## Run
 
 ```bash

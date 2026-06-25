@@ -56,6 +56,15 @@ def test_verify_checker_raise_becomes_fail_verdict(tmp_path):
     assert out["usage_this_month"] == 1                       # attempt consumed, uniform
 
 
+def test_verify_unknown_backend_fails_closed_without_metering(tmp_path):
+    # A misconfigured backend must fail closed and NOT burn quota (checker is built
+    # before metering).
+    s = _store(tmp_path, k1=(["A"], 5))
+    out = run_independent_verify("c", "code", "k1", store=s, backend="codxe", month=M)
+    assert out["allowed"] is False and "unknown backend" in out["reason"]
+    assert s.usage("k1", M) == 0                              # no consumption on misconfig
+
+
 def test_stub_mode_entitlement(tmp_path):
     s = _store(tmp_path, k1=(["B"], None))
     out = run_stub_mode("B", "k1", store=s, month=M)

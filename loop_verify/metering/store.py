@@ -8,8 +8,17 @@ always passed in by callers so logic stays deterministic under test.
 from __future__ import annotations
 
 import json
+import os
 import threading
 from pathlib import Path
+
+
+def default_store_path() -> Path:
+    """The key store location: $LOOP_VERIFY_STORE or ~/.loop-verify/keys.json.
+
+    Single source of truth so the server and the admin CLI never drift apart.
+    """
+    return Path(os.getenv("LOOP_VERIFY_STORE", str(Path.home() / ".loop-verify" / "keys.json")))
 
 
 class Store:
@@ -33,6 +42,10 @@ class Store:
     def get_key(self, api_key: str) -> dict | None:
         return self._data.get(api_key)
 
+    def all_keys(self) -> dict:
+        """A shallow copy of the registry {api_key: record} (admin/listing use)."""
+        return dict(self._data)
+
     def add_key(self, api_key: str, entitlements, monthly_cap: int | None = None) -> dict:
         with self._lock:
             self._data[api_key] = {
@@ -42,6 +55,23 @@ class Store:
             }
             self._save()
             return self._data[api_key]
+
+    def set_plan(self, api_key: str, entitlements, monthly_cap: int | None = None) -> dict:
+        """Create or update a key's entitlements + cap, PRESERVING its usage counter.
+
+        Unlike add_key (which replaces the whole record), this never resets usage — so
+        re-provisioning an existing customer cannot silently hand them fresh quota or
+        wipe their audit trail.
+        """
+        with self._lock:
+            rec = self._data.setdefault(
+                api_key, {"entitlements": [], "monthly_cap": None, "usage": {}}
+            )
+            rec["entitlements"] = list(entitlements)
+            rec["monthly_cap"] = monthly_cap
+            rec.setdefault("usage", {})
+            self._save()
+            return rec
 
     def usage(self, api_key: str, month: str) -> int:
         rec = self._data.get(api_key) or {}

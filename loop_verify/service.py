@@ -16,12 +16,23 @@ def current_month() -> str:
     return datetime.date.today().strftime("%Y-%m")
 
 
-def run_independent_verify(criteria, artifact, api_key, *, store, checker=None, month=None) -> dict:
-    """Mode A. Gate by entitlement+cap, run an independent checker, meter the call."""
+def run_independent_verify(criteria, artifact, api_key, *, store, checker=None, backend=None, month=None) -> dict:
+    """Mode A. Gate by entitlement+cap, run an independent checker, meter the call.
+
+    Pass an explicit `checker` (tests inject MockChecker) or a `backend` name to select
+    one by env-style key (codex/openai/gemini/mock); if neither, the default backend.
+    """
     month = month or current_month()
     gate = check_access(store, api_key, "A", month)
     if not gate.allowed:
         return {"allowed": False, "mode": "A", "reason": gate.reason}
+    # Build the checker BEFORE metering — constructing it is cheap (no model call), so a
+    # misconfigured backend fails closed with NO quota burned.
+    if checker is None:
+        try:
+            checker = get_checker(backend)
+        except ValueError as e:
+            return {"allowed": False, "mode": "A", "reason": str(e)}
     # Atomic reserve BEFORE the call — closes the check-then-increment cap race.
     # try_consume reads the cap under its own lock, so the decision is race-free.
     ok, used = store.try_consume(api_key, month)
@@ -29,7 +40,6 @@ def run_independent_verify(criteria, artifact, api_key, *, store, checker=None, 
         rec = store.get_key(api_key)
         cap = rec.get("monthly_cap") if rec else None
         return {"allowed": False, "mode": "A", "reason": f"monthly cap reached ({used}/{cap})"}
-    checker = checker or get_checker()
     try:
         verdict = checker.verify(criteria, artifact)
     except Exception as e:  # noqa: BLE001 — a custom checker may raise; never crash the

@@ -6,19 +6,16 @@ LOOP_VERIFY_STORE (default ~/.loop-verify/keys.json).
 """
 from __future__ import annotations
 
-import os
 from dataclasses import asdict
-from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
 from . import __version__
-from .metering.store import Store
+from .metering.store import Store, default_store_path
 from .modes.registry import MODES
 from .service import run_independent_verify, run_stub_mode
 
-_STORE_PATH = os.getenv("LOOP_VERIFY_STORE", str(Path.home() / ".loop-verify" / "keys.json"))
-_store = Store(_STORE_PATH)
+_store = Store(default_store_path())
 
 mcp = FastMCP("loop-verify")
 
