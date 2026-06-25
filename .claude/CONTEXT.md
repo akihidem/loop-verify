@@ -35,6 +35,13 @@ Real edge = `bench/edge_bench.py --backend codex` (costs codex quota).
   (key CLI), `loop_verify/modes/` (A/B/C/D à-la-carte suite), `docs/GTM.md`, proprietary
   LICENSE -> MIT. Repo made public.
 
+## Deploy
+- HTTP transport: `server.py --transport http`; bind via LOOP_VERIFY_HOST/PORT (env-only,
+  read at construction so FastMCP's host-derived Host-header protection stays consistent).
+  Remote exposure: LOOP_VERIFY_ALLOWED_HOSTS allowlist (0.0.0.0 alone disables the Host check).
+- Dockerfile (host 0.0.0.0, backend=openai since codex CLI isn't in the image).
+- `demo/http_smoke.py` = real MCP client round-trip over http (mock backend, no key). Verified live.
+
 ## Out of scope / future
-- HTTP hosted deploy; a larger marker-free, lineage-controlled bench. (Gemini backend
-  wired 2026-06-25, mirrors openai — injectable client, unit-tested, awaits a live key.)
+- A larger marker-free, lineage-controlled bench; auth on the http endpoint; a hosted instance.
+  (Gemini backend wired 2026-06-25, mirrors openai — injectable client, unit-tested, awaits live key.)

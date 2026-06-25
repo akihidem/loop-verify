@@ -34,8 +34,14 @@ same-family check misses.
 # local (stdio), codex backend:
 LOOP_VERIFY_BACKEND=codex ~/.venvs/loop-verify/bin/python -m loop_verify.server
 
-# HTTP transport (for a remotely-reachable tool):
+# HTTP transport (binds 127.0.0.1:8000 by default; localhost-only Host check):
 LOOP_VERIFY_BACKEND=codex ~/.venvs/loop-verify/bin/python -m loop_verify.server --transport http
+
+# ...to serve other hosts, bind all interfaces and allow their Host header:
+LOOP_VERIFY_HOST=0.0.0.0 LOOP_VERIFY_PORT=8000 LOOP_VERIFY_ALLOWED_HOSTS=myhost:8000 \
+LOOP_VERIFY_BACKEND=codex ~/.venvs/loop-verify/bin/python -m loop_verify.server --transport http
+# (LOOP_VERIFY_ALLOWED_HOSTS="*" disables the Host check; binding 0.0.0.0 alone also
+#  opens it. Host/port are read at startup — set them via env, not flags.)
 
 # OpenAI backend (needs OPENAI_API_KEY + `pip install openai`):
 OPENAI_API_KEY=... LOOP_VERIFY_BACKEND=openai \
@@ -47,7 +53,32 @@ GEMINI_API_KEY=... LOOP_VERIFY_BACKEND=gemini \
 ```
 
 Tools: `independent_verify(criteria, artifact)` and `info()`. Backend selected by
-`LOOP_VERIFY_BACKEND` (`codex` default | `openai` | `gemini` | `mock`).
+`LOOP_VERIFY_BACKEND` (`codex` default | `openai` | `gemini` | `mock`). For http, bind
+with `LOOP_VERIFY_HOST` / `LOOP_VERIFY_PORT` (read at startup).
+
+Verify the http transport is reachable end to end (boots a server, runs a real MCP
+client round-trip, no key needed):
+
+```bash
+python demo/http_smoke.py
+```
+
+## Deploy (Docker)
+
+The codex backend needs the `codex` CLI (not in the image), so a container uses a
+key-based backend:
+
+```bash
+docker build -t loop-verify .
+docker run --rm -p 8000:8000 \
+  -e LOOP_VERIFY_BACKEND=openai -e OPENAI_API_KEY=sk-... \
+  loop-verify
+# MCP endpoint: http://localhost:8000/mcp
+```
+
+The image binds `0.0.0.0`, so FastMCP's DNS-rebinding Host check is **off by default**
+(the container accepts any `Host` header). To restrict it, add
+`-e LOOP_VERIFY_ALLOWED_HOSTS=myhost:8000`.
 
 ## Use it from Python
 
