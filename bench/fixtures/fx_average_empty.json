@@ -1,0 +1,6 @@
+{
+  "name": "average-empty-crash",
+  "has_defect": true,
+  "criteria": "1. average(nums) returns the arithmetic mean of a non-empty list.\n2. average([2, 4]) == 3.0.\n3. average([]) returns 0.0 (it must NOT raise).",
+  "artifact": "def average(nums):\n    return sum(nums) / len(nums)\n"
+}

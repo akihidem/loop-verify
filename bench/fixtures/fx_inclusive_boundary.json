@@ -1,0 +1,6 @@
+{
+  "name": "inclusive-range-boundary",
+  "has_defect": true,
+  "criteria": "1. in_range(x, lo, hi) returns True iff lo <= x <= hi (INCLUSIVE).\n2. in_range(5, 1, 5) is True.\n3. in_range(1, 1, 5) is True.\n4. in_range(6, 1, 5) is False.",
+  "artifact": "def in_range(x, lo, hi):\n    return lo < x < hi\n"
+}

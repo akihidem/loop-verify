@@ -1,0 +1,6 @@
+{
+  "name": "count-vowels-correct",
+  "has_defect": false,
+  "criteria": "1. count_vowels(s) returns the number of vowels (a,e,i,o,u) in lowercase s.\n2. count_vowels(\"hello\") == 2.\n3. count_vowels(\"xyz\") == 0.\n4. count_vowels(\"\") == 0.",
+  "artifact": "def count_vowels(s):\n    return sum(1 for c in s if c in \"aeiou\")\n"
+}

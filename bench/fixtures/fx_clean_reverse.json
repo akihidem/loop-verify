@@ -1,0 +1,6 @@
+{
+  "name": "reverse-correct",
+  "has_defect": false,
+  "criteria": "1. reverse(s) returns the string reversed.\n2. reverse(\"abc\") == \"cba\".\n3. reverse(\"\") == \"\".",
+  "artifact": "def reverse(s):\n    return s[::-1]\n"
+}

@@ -10,8 +10,9 @@ Contrast:       python bench/edge_bench.py --backend mock   (marker-blind -> mis
 The gap between codex (GO) and a naive check (NO-GO) is the reason to use the tool.
 Exit code = the edge verdict (GO -> 0, NO-GO -> 1) so it can act as a CI gate.
 
-Honest limit: fixtures are few. A larger, marker-free, lineage-controlled benchmark
-is future work.
+Honest limit: 9 hand-written fixtures (4 clean / 5 buggy, diverse bug classes) —
+modest, not a statistically large suite. A larger, marker-free, lineage-controlled
+benchmark is future work.
 """
 from __future__ import annotations
 
