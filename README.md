@@ -79,6 +79,16 @@ client round-trip, no key needed):
 python demo/http_smoke.py
 ```
 
+## Wire it into loop-kit's loop-protocol
+
+[loop-kit](https://github.com/akihidem/loop-kit)'s `loop-protocol` skill already **prefers a
+cross-vendor checker when one is available** and falls back to its bundled same-family haiku
+`validator` otherwise. To make loop-verify that checker, run it as an MCP server (above) so the
+`independent_verify(criteria, artifact)` tool is in the session — loop-protocol picks it up
+automatically. Nothing to patch in loop-kit: the verdict contract is identical, so it's a genuine
+drop-in. Without loop-verify, loop-kit still runs on the haiku validator (zero external accounts);
+with it, the loop reaches real cross-lineage independence.
+
 ## Deploy (Docker)
 
 The codex backend needs the `codex` CLI (not in the image), so a container uses a
